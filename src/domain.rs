@@ -1,5 +1,9 @@
 #[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
+pub struct CreateFlightsRequest {
+    pub query: Query,
+}
+
+#[derive(serde::Serialize)]
 pub struct Query {
     pub market: String,
     pub locale: String,
@@ -17,7 +21,6 @@ pub struct Query {
 }
 
 #[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct QueryLeg {
     pub origin_place_id: Place,
     pub destination_place_id: Place,
@@ -25,7 +28,6 @@ pub struct QueryLeg {
 }
 
 #[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Place {
     iata: Option<String>,
     entry_id: Option<i32>,
@@ -57,15 +59,52 @@ pub enum CabinClass {
     CabinClassFirst,
 }
 
+#[derive(serde::Deserialize)]
+pub struct Markets {
+    pub markets: Vec<Market>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct Market {
+    pub code: String,
+    pub name: String,
+}
+
+#[derive(serde::Deserialize)]
+pub struct Locales {
+    pub locales: Vec<Locale>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct Locale {
+    pub code: String,
+    pub name: String,
+}
+
 impl Default for Query {
     fn default() -> Self {
+        let leg = QueryLeg {
+            origin_place_id: Place {
+                iata: Some("TPE".to_string()),
+                entry_id: None,
+            },
+            destination_place_id: Place {
+                iata: Some("HKG".to_string()),
+                entry_id: None,
+            },
+            date: Date {
+                year: 2023,
+                month: 4,
+                day: 1,
+            },
+        };
         Self {
-            market: "".to_string(),
-            locale: "".to_string(),
-            currency: "".to_string(),
-            query_legs: vec![],
-            cabin_class: CabinClass::CabinClassUnspecified,
-            adults: 0,
+            market: "TW".to_string(),
+            locale: "zh-TW".to_string(),
+            currency: "TWD".to_string(),
+            query_legs: vec![leg],
+            cabin_class: CabinClass::CabinClassEconomy,
+            adults: 1,
             children_ages: vec![],
             include_carriers_ids: vec![],
             exclude_carriers_ids: vec![],
