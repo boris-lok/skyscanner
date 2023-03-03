@@ -4,6 +4,13 @@ version = "0.1.0"
 edition = "2021"
 authors = ["boris.lok <boris.lok.tw@outlook.com>"]
 
+[lib]
+path = "src/lib.rs"
 
 [dependencies]
+anyhow = "1.0.69"
+config = "0.13.3"
 reqwest = { version = "0.11.14", features = ["json", "serde_json"] }
+secrecy = { version = "0.8.0", features = ["serde"] }
+serde = { version = "1.0.152", features = ["derive"] }
+tokio = { version = "1.26.0", features = ["full"] }
