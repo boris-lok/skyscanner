@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(serde::Serialize)]
 pub struct CreateFlightsRequest {
     pub query: Query,
@@ -78,6 +80,150 @@ pub struct Locales {
 #[derive(serde::Deserialize)]
 pub struct Locale {
     pub code: String,
+    pub name: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FlightsResponse {
+    pub session_token: String,
+    pub status: String,
+    pub action: String,
+    pub content: FightsContent,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FightsContent {
+    pub results: FightResult,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FightResult {
+    pub itineraries: HashMap<String, Itinerary>,
+    pub legs: HashMap<String, Leg>,
+    pub segments: HashMap<String, Segment>,
+    pub places: HashMap<String, ResponsePlace>,
+    pub carriers: HashMap<String, Carrier>,
+    pub agents: HashMap<String, Agent>,
+    pub alliances: HashMap<String, Alliance>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Itinerary {
+    pub pricing_options: Vec<PriceOption>,
+    pub leg_ids: Vec<String>,
+    pub sustainability_data: Option<String>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PriceOption {
+    pub id: String,
+    pub price: Price,
+    pub agent_ids: Vec<String>,
+    pub transfer_type: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Price {
+    pub amount: String,
+    pub unit: String,
+    pub update_status: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Leg {
+    pub origin_place_id: String,
+    pub destination_place_id: String,
+    pub departure_date_time: ResponseDateTime,
+    pub arrival_date_time: ResponseDateTime,
+    pub duration_in_minutes: u32,
+    pub stop_count: u16,
+    pub marketing_carrier_ids: Vec<String>,
+    pub operating_carrier_ids: Vec<String>,
+    pub segment_ids: Vec<String>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct ResponseDateTime {
+    pub year: u16,
+    pub month: u8,
+    pub day: u8,
+    pub hour: u8,
+    pub minute: u8,
+    pub second: u8,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Segment {
+    pub origin_place_id: String,
+    pub destination_place_id: String,
+    pub departure_date_time: ResponseDateTime,
+    pub arrival_date_time: ResponseDateTime,
+    pub duration_in_minutes: u32,
+    pub marking_flight_number: Option<String>,
+    pub marking_carrier_id: Option<String>,
+    pub operating_carrier_id: Option<String>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponsePlace {
+    pub entity_id: String,
+    pub parent_id: String,
+    pub name: String,
+    pub iata: String,
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub coordinates: Option<Coordinates>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct Coordinates {
+    pub latitude: f64,
+    pub longitude: f64,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Carrier {
+    pub name: String,
+    pub alliance_id: String,
+    pub image_url: String,
+    pub iata: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Agent {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub image_url: String,
+    pub feedback_count: i32,
+    pub rating: f64,
+    pub rating_breakdown: Option<RatingBreakdown>,
+    pub is_optimised_for_mobile: bool,
+}
+
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct RatingBreakdown {
+    pub customer_service: f64,
+    pub reliable_prices: f64,
+    pub clear_extra_fees: f64,
+    pub ease_of_booking: f64,
+    pub other: f64,
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct Alliance {
     pub name: String,
 }
 

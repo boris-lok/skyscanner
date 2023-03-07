@@ -3,7 +3,7 @@ use reqwest::{Error, Url};
 use secrecy::ExposeSecret;
 
 use crate::configuration::Settings;
-use crate::domain::{CreateFlightsRequest, Locales, Markets, Query};
+use crate::domain::{CreateFlightsRequest, FlightsResponse, Locales, Markets};
 
 pub struct Services {
     client: reqwest::Client,
@@ -58,11 +58,19 @@ impl Services {
         }
     }
 
-    pub async fn create_a_request_to_find_flights(&self, q: &CreateFlightsRequest) {
+    pub async fn create_a_request_to_find_flights(
+        &self,
+        q: &CreateFlightsRequest,
+    ) -> Result<FlightsResponse, Error> {
         let uri = "flights/live/search/create";
 
         let url = self.base_url.join(uri).expect("Can't join the url");
 
         let res = self.client.post(url.as_str()).json(q).send().await;
+
+        match res {
+            Ok(res) => res.json::<FlightsResponse>().await,
+            Err(e) => Err(e),
+        }
     }
 }
