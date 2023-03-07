@@ -31,12 +31,13 @@ impl Services {
         })
     }
 
+    fn get_url(&self, rest: &str) -> Url {
+        self.base_url.join(rest).expect("Can't join the url")
+    }
+
     pub async fn get_markets(&self, locale: &str) -> Result<Markets, Error> {
         let uri = format!("culture/markets/{locale}");
-        let url = self
-            .base_url
-            .join(uri.as_str())
-            .expect("Can't join the url");
+        let url = self.get_url(uri.as_str());
 
         let res = self.client.get(url.as_str()).send().await;
 
@@ -48,7 +49,7 @@ impl Services {
 
     pub async fn get_locales(&self) -> Result<Locales, Error> {
         let uri = "culture/locales";
-        let url = self.base_url.join(uri).expect("Can't join the url");
+        let url = self.get_url(uri);
 
         let res = self.client.get(url.as_str()).send().await;
 
@@ -63,8 +64,7 @@ impl Services {
         q: &CreateFlightsRequest,
     ) -> Result<FlightsResponse, Error> {
         let uri = "flights/live/search/create";
-
-        let url = self.base_url.join(uri).expect("Can't join the url");
+        let url = self.get_url(uri);
 
         let res = self.client.post(url.as_str()).json(q).send().await;
 
