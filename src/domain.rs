@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 
 #[derive(serde::Serialize)]
 pub struct CreateFlightsRequest {
@@ -240,8 +241,8 @@ impl Default for Query {
             },
             date: Date {
                 year: 2023,
-                month: 4,
-                day: 1,
+                month: 6,
+                day: 2,
             },
         };
         Self {
@@ -259,5 +260,21 @@ impl Default for Query {
             include_sustain_ability_data: false,
             near_by_airports: false,
         }
+    }
+}
+
+impl Display for ResponseDateTime {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}-{:02}-{:02} {:02}:{:02}:{:02}",
+            self.year, self.month, self.day, self.hour, self.minute, self.second
+        )
+    }
+}
+
+impl Display for Price {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.unit, self.amount)
     }
 }

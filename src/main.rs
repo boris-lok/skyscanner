@@ -9,8 +9,22 @@ async fn main() {
     let services = Services::new(&config).expect("Can't create a services");
 
     let q = CreateFlightsRequest {
-        query: Query::default()
+        query: Query::default(),
     };
 
-    services.create_a_request_to_find_flights(&q).await;
+    let res = services.create_a_request_to_find_flights(&q).await;
+
+    if let Ok(res) = res {
+        for (_, itinerary) in res.content.results.itineraries.iter() {
+            for leg_id in itinerary.leg_ids.iter() {
+                let leg = res.content.results.legs.get(leg_id);
+                if let Some(leg) = leg {
+                    println!(
+                        "departure date: {} arrival date: {}, carrier ids: {:?}, operating carrier ids: {:?}",
+                        leg.departure_date_time, leg.arrival_date_time, leg.marketing_carrier_ids, leg.operating_carrier_ids,
+                    );
+                }
+            }
+        }
+    }
 }
