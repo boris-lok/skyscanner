@@ -16,12 +16,30 @@ async fn main() {
 
     if let Ok(res) = res {
         for (_, itinerary) in res.content.results.itineraries.iter() {
-            for leg_id in itinerary.leg_ids.iter() {
+            for (leg_id, price_options) in itinerary
+                .leg_ids
+                .iter()
+                .zip(itinerary.pricing_options.iter())
+            {
                 let leg = res.content.results.legs.get(leg_id);
                 if let Some(leg) = leg {
+                    let carriers = leg
+                        .marketing_carrier_ids
+                        .iter()
+                        .map(|carrier_id| {
+                            let carrier = res.content.results.carriers.get(carrier_id);
+                            match carrier {
+                                None => carrier_id.clone(),
+                                Some(carrier) => carrier.name.clone(),
+                            }
+                        })
+                        .collect::<Vec<_>>();
                     println!(
-                        "departure date: {} arrival date: {}, carrier ids: {:?}, operating carrier ids: {:?}",
-                        leg.departure_date_time, leg.arrival_date_time, leg.marketing_carrier_ids, leg.operating_carrier_ids,
+                        "departure date: {} arrival date: {}, price: {} carriers: {:?}",
+                        leg.departure_date_time,
+                        leg.arrival_date_time,
+                        price_options.price,
+                        carriers
                     );
                 }
             }
