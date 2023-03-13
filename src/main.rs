@@ -28,6 +28,8 @@ async fn main() {
 
     let mut datasource = Datasource::new(q, services);
 
+    let mut res = vec![];
+
     loop {
         let data = datasource.next().await;
 
@@ -44,8 +46,16 @@ async fn main() {
 
         let data = data.unwrap();
 
-        println!("{}", data.content.results);
+        let formatted_results = data.content.results.format();
+
+        res.extend(formatted_results);
 
         std::thread::sleep(std::time::Duration::from_secs(5));
     }
+
+    res.sort();
+
+    res.iter().for_each(|r| {
+        println!("{}", r);
+    });
 }

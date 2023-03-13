@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
@@ -264,6 +265,19 @@ pub enum AgentType {
     AgentTypeAirline,
 }
 
+#[derive(Debug)]
+pub struct FormattedResult {
+    pub price_options: Vec<f64>,
+    pub details: Vec<Details>,
+}
+
+#[derive(Debug)]
+pub struct Details {
+    pub departure_date: ResponseDateTime,
+    pub arrival_date: ResponseDateTime,
+    pub carrier_name: String,
+}
+
 impl Default for Query {
     fn default() -> Self {
         Self {
@@ -364,10 +378,9 @@ impl Display for Price {
     }
 }
 
-impl Display for FightResult {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let res = self
-            .itineraries
+impl FightResult {
+    pub fn format(self) -> Vec<FormattedResult> {
+        self.itineraries
             .values()
             .map(|itinerary| {
                 let stops = itinerary
@@ -378,8 +391,6 @@ impl Display for FightResult {
                         // friendly assert
                         assert!(leg.is_some());
                         let leg = leg.unwrap();
-                        let departure_date_time = format!("{}", leg.departure_date_time);
-                        let arrival_date_time = format!("{}", leg.arrival_date_time);
                         let carrier_name =
                             if let Some(carrier_id) = leg.marketing_carrier_ids.first() {
                                 let carrier = self.carriers.get(carrier_id);
@@ -394,30 +405,67 @@ impl Display for FightResult {
                             } else {
                                 "Unknown carrier name".to_string()
                             };
-
-                        (departure_date_time, arrival_date_time, carrier_name)
+                        Details {
+                            departure_date: leg.departure_date_time,
+                            arrival_date: leg.arrival_date_time,
+                            carrier_name,
+                        }
                     })
                     .collect::<Vec<_>>();
-                let price = itinerary
+                let prices = itinerary
                     .pricing_options
                     .iter()
-                    .map(|p| format!("{}", p.price))
+                    .filter(|p| !p.price.amount.is_empty())
+                    .filter_map(|p| p.price.amount.parse::<f64>().ok())
                     .collect::<Vec<_>>();
-                (price, stops)
+
+                FormattedResult {
+                    price_options: prices,
+                    details: stops,
+                }
             })
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>()
+    }
+}
 
-        for (prices, stops) in res.iter() {
-            for (departure_date, arrival_date, carrier) in stops.iter() {
-                writeln!(f, "Carrier: {carrier}\t{departure_date} -> {arrival_date}")
-                    .expect("Can't flush data");
-            }
+impl PartialEq<Self> for FormattedResult {
+    fn eq(&self, other: &Self) -> bool {
+        self.price_options.first().unwrap() - other.price_options.first().unwrap() <= f64::EPSILON
+    }
+}
 
-            for p in prices.iter() {
-                writeln!(f, "Price:\t{p}").expect("Can't flush data");
-            }
+impl PartialOrd<Self> for FormattedResult {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.price_options
+            .first()
+            .unwrap()
+            .partial_cmp(other.price_options.first().unwrap())
+    }
+}
 
-            writeln!(f).expect("Can't flush data");
+impl Eq for FormattedResult {}
+
+impl Ord for FormattedResult {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let b = other.price_options.first().unwrap();
+        let a = self.price_options.first().unwrap();
+        a.total_cmp(b)
+    }
+}
+
+impl Display for FormattedResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for stop in self.details.iter() {
+            writeln!(
+                f,
+                "Carrier({}):\t{} -> {}",
+                stop.carrier_name, stop.departure_date, stop.arrival_date
+            )
+            .expect("Can't flush data");
+        }
+
+        if let Some(price) = self.price_options.first() {
+            writeln!(f, "Price: {}", price / 1000.0).expect("Can't flush data");
         }
 
         Ok(())
