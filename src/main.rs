@@ -32,6 +32,7 @@ async fn main() {
         let data = datasource.next().await;
 
         if data.is_err() {
+            println!("{:?}", data);
             break;
         }
 
@@ -44,5 +45,7 @@ async fn main() {
         let data = data.unwrap();
 
         println!("{}", data.content.results);
+
+        std::thread::sleep(std::time::Duration::from_secs(5));
     }
 }

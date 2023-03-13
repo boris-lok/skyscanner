@@ -1,4 +1,4 @@
-use crate::domain::{CreateFlightsRequest, FlightsResponse, Query};
+use crate::domain::{CreateFlightsRequest, FlightsResponse, Query, ResponseStatus};
 use crate::services::Services;
 use reqwest::Error;
 
@@ -31,6 +31,7 @@ impl Datasource {
             match res {
                 Ok(res) => {
                     self.session_token = Some(res.session_token.clone());
+                    self.completed = res.status == ResponseStatus::ResultStatusComplete;
                     Ok(Some(res))
                 }
                 Err(e) => Err(e),
@@ -39,9 +40,7 @@ impl Datasource {
             let res = self.services.poll_a_request_to_find_flights(token).await;
             match res {
                 Ok(res) => {
-                    if res.status.eq("RESULT_STATUS_COMPLETE") {
-                        self.completed = true;
-                    }
+                    self.completed = res.status == ResponseStatus::ResultStatusComplete;
                     Ok(Some(res))
                 }
                 Err(e) => Err(e),

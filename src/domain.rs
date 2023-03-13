@@ -88,8 +88,8 @@ pub struct Locale {
 #[serde(rename_all = "camelCase")]
 pub struct FlightsResponse {
     pub session_token: String,
-    pub status: String,
-    pub action: String,
+    pub status: ResponseStatus,
+    pub action: ResponseAction,
     pub content: FightsContent,
 }
 
@@ -181,7 +181,7 @@ pub struct ResponsePlace {
     pub name: String,
     pub iata: String,
     #[serde(rename = "type")]
-    pub kind: String,
+    pub kind: PlaceType,
     pub coordinates: Option<Coordinates>,
 }
 
@@ -205,7 +205,7 @@ pub struct Carrier {
 pub struct Agent {
     pub name: String,
     #[serde(rename = "type")]
-    pub kind: String,
+    pub kind: AgentType,
     pub image_url: String,
     pub feedback_count: i32,
     pub rating: f64,
@@ -226,6 +226,42 @@ pub struct RatingBreakdown {
 #[derive(serde::Deserialize, Debug)]
 pub struct Alliance {
     pub name: String,
+}
+
+#[derive(serde::Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ResponseStatus {
+    ResultStatusUnspecified,
+    ResultStatusComplete,
+    ResultStatusIncomplete,
+    ResultStatusFailed,
+}
+
+#[derive(serde::Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ResponseAction {
+    ResultActionUnspecified,
+    ResultActionReplaced,
+    ResultActionNotModified,
+    ResultActionOmitted,
+}
+
+#[derive(serde::Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PlaceType {
+    PlaceTypeUnspecified,
+    PlaceTypeAirport,
+    PlaceTypeCity,
+    PlaceTypeCountry,
+    PlaceTypeContinent,
+}
+
+#[derive(serde::Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AgentType {
+    AgentTypeUnspecified,
+    AgentTypeTravelAgent,
+    AgentTypeAirline,
 }
 
 impl Default for Query {
