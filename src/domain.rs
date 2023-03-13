@@ -6,7 +6,7 @@ pub struct CreateFlightsRequest {
     pub query: Query,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Clone)]
 pub struct Query {
     pub market: String,
     pub locale: String,
@@ -23,27 +23,27 @@ pub struct Query {
     pub near_by_airports: bool,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Clone)]
 pub struct QueryLeg {
     pub origin_place_id: Place,
     pub destination_place_id: Place,
     pub date: Date,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Clone)]
 pub struct Place {
     iata: Option<String>,
     entry_id: Option<i32>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Clone)]
 pub struct Date {
     year: u16,
     month: u8,
     day: u8,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Clone)]
 pub enum CabinClass {
     // Cabin class is not specified.
     #[serde(rename = "CABIN_CLASS_UNSPECIFIED")]
@@ -320,10 +320,11 @@ impl Display for ResponseDateTime {
 
 impl Display for Price {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let amount = self.amount.parse::<usize>();
-        // friendly assert.
-        assert!(amount.is_ok());
-        write!(f, "{}", amount.unwrap() / 1000)
+        let amount = self.amount.parse::<f64>();
+        match amount {
+            Ok(amt) => write!(f, "{}", amt / 1000.0),
+            Err(_) => write!(f, "no price"),
+        }
     }
 }
 

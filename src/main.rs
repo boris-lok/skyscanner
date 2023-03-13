@@ -1,5 +1,6 @@
 use skyscanner::configuration::get_configuration;
-use skyscanner::domain::{CreateFlightsRequest, Date, Place, Query, QueryLeg};
+use skyscanner::datasource::Datasource;
+use skyscanner::domain::{Date, Place, Query, QueryLeg};
 use skyscanner::services::Services;
 
 #[tokio::main]
@@ -25,11 +26,23 @@ async fn main() {
     let leg = QueryLeg::new(from, to, date);
     q = q.set_query_leg(leg);
 
-    let q = CreateFlightsRequest::new(q);
+    let mut datasource = Datasource::new(q, services);
 
-    let res = services.create_a_request_to_find_flights(&q).await;
+    loop {
+        let data = datasource.next().await;
 
-    if let Ok(res) = res {
-        println!("{}", res.content.results);
+        if data.is_err() {
+            break;
+        }
+
+        let data = data.unwrap();
+
+        if data.is_none() {
+            break;
+        }
+
+        let data = data.unwrap();
+
+        println!("{}", data.content.results);
     }
 }

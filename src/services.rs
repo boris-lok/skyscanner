@@ -73,4 +73,18 @@ impl Services {
             Err(e) => Err(e),
         }
     }
+
+    pub async fn poll_a_request_to_find_flights(
+        &self,
+        token: &str,
+    ) -> Result<FlightsResponse, Error> {
+        let uri = format!("flights/live/search/poll/{token}");
+        let url = self.get_url(&uri);
+
+        let res = self.client.post(url.as_str()).send().await;
+        match res {
+            Ok(res) => res.json::<FlightsResponse>().await,
+            Err(e) => Err(e),
+        }
+    }
 }
