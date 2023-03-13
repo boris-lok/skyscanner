@@ -230,26 +230,11 @@ pub struct Alliance {
 
 impl Default for Query {
     fn default() -> Self {
-        let leg = QueryLeg {
-            origin_place_id: Place {
-                iata: Some("TPE".to_string()),
-                entry_id: None,
-            },
-            destination_place_id: Place {
-                iata: Some("HKG".to_string()),
-                entry_id: None,
-            },
-            date: Date {
-                year: 2023,
-                month: 6,
-                day: 2,
-            },
-        };
         Self {
-            market: "TW".to_string(),
-            locale: "zh-TW".to_string(),
-            currency: "TWD".to_string(),
-            query_legs: vec![leg],
+            market: "".to_string(),
+            locale: "".to_string(),
+            currency: "".to_string(),
+            query_legs: vec![],
             cabin_class: CabinClass::CabinClassEconomy,
             adults: 1,
             children_ages: vec![],
@@ -260,6 +245,66 @@ impl Default for Query {
             include_sustain_ability_data: false,
             near_by_airports: false,
         }
+    }
+}
+
+impl Query {
+    pub fn set_market(mut self, market: String) -> Self {
+        self.market = market;
+        self
+    }
+
+    pub fn set_locale(mut self, locale: String) -> Self {
+        self.locale = locale;
+        self
+    }
+
+    pub fn set_currency(mut self, currency: String) -> Self {
+        self.currency = currency;
+        self
+    }
+
+    pub fn set_cabin_class(mut self, cabin_class: CabinClass) -> Self {
+        self.cabin_class = cabin_class;
+        self
+    }
+
+    pub fn set_adults(mut self, adults: u16) -> Self {
+        self.adults = adults;
+        self
+    }
+
+    pub fn set_query_leg(mut self, leg: QueryLeg) -> Self {
+        self.query_legs.push(leg);
+        self
+    }
+}
+
+impl Date {
+    pub fn new(year: u16, month: u8, day: u8) -> Self {
+        Self { year, month, day }
+    }
+}
+
+impl Place {
+    pub fn new(iata: Option<String>, entry_id: Option<i32>) -> Self {
+        Self { iata, entry_id }
+    }
+}
+
+impl QueryLeg {
+    pub fn new(from: Place, to: Place, date: Date) -> Self {
+        Self {
+            origin_place_id: from,
+            destination_place_id: to,
+            date,
+        }
+    }
+}
+
+impl CreateFlightsRequest {
+    pub fn new(q: Query) -> Self {
+        Self { query: q }
     }
 }
 
