@@ -5,6 +5,7 @@ use secrecy::ExposeSecret;
 use crate::configuration::Settings;
 use crate::domain::{CreateFlightsRequest, FlightsResponse, Locales, Markets};
 
+#[derive(Clone)]
 pub struct Services {
     client: reqwest::Client,
     base_url: Url,
@@ -62,16 +63,21 @@ impl Services {
     pub async fn create_a_request_to_find_flights(
         &self,
         q: &CreateFlightsRequest,
-    ) -> Result<FlightsResponse, Error> {
+    ) -> anyhow::Result<Option<FlightsResponse>> {
         let uri = "flights/live/search/create";
         let url = self.get_url(uri);
 
-        let res = self.client.post(url.as_str()).json(q).send().await;
+        let res = self.client.post(url.as_str()).json(q).send().await?;
 
-        match res {
-            Ok(res) => res.json::<FlightsResponse>().await,
-            Err(e) => Err(e),
-        }
+        Ok(res.text()
+            .await
+            .map(|e| {
+                serde_json::from_str::<FlightsResponse>(e.as_str())
+                    .map_err(|_| {
+                        dbg!(e);
+                    })
+                    .ok()
+            })?)
     }
 
     pub async fn poll_a_request_to_find_flights(

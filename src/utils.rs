@@ -1,7 +1,13 @@
-use chrono::{Datelike, Weekday};
+use chrono::{Datelike, NaiveDate, Weekday};
 
 pub fn check_date_is_weekend(date: chrono::DateTime<chrono::Local>) -> bool {
     matches!(date.weekday(), Weekday::Sat | Weekday::Sun)
+}
+
+pub fn parse_date(year: u16, month: u8, day: u8) -> NaiveDate {
+    let formatted_date = format!("{year}-{month}-{day}");
+    NaiveDate::parse_from_str(formatted_date.as_str(), "%Y-%m-%d")
+        .expect(format!("Failed to parse date {formatted_date}").as_str())
 }
 
 #[cfg(test)]

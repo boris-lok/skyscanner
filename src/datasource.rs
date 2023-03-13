@@ -19,7 +19,7 @@ impl Datasource {
         }
     }
 
-    pub async fn next(&mut self) -> Result<Option<FlightsResponse>, Error> {
+    pub async fn next(&mut self) -> anyhow::Result<Option<FlightsResponse>> {
         if self.completed {
             return Ok(None);
         }
@@ -27,24 +27,18 @@ impl Datasource {
             let req = CreateFlightsRequest {
                 query: self.query.clone(),
             };
-            let res = self.services.create_a_request_to_find_flights(&req).await;
-            match res {
-                Ok(res) => {
-                    self.session_token = Some(res.session_token.clone());
-                    self.completed = res.status == ResponseStatus::ResultStatusComplete;
-                    Ok(Some(res))
-                }
-                Err(e) => Err(e),
+            let res = self.services.create_a_request_to_find_flights(&req).await?;
+            if let Some(res) = res {
+                self.session_token = Some(res.session_token.clone());
+                self.completed = res.status == ResponseStatus::ResultStatusComplete;
+                Ok(Some(res))
+            } else {
+                Ok(None)
             }
         } else if let Some(token) = &self.session_token {
-            let res = self.services.poll_a_request_to_find_flights(token).await;
-            match res {
-                Ok(res) => {
-                    self.completed = res.status == ResponseStatus::ResultStatusComplete;
-                    Ok(Some(res))
-                }
-                Err(e) => Err(e),
-            }
+            let res = self.services.poll_a_request_to_find_flights(token).await?;
+            self.completed = res.status == ResponseStatus::ResultStatusComplete;
+            Ok(Some(res))
         } else {
             unreachable!()
         }
