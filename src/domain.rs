@@ -150,7 +150,7 @@ pub struct Leg {
     pub segment_ids: Vec<String>,
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize, Debug, Copy, Clone)]
 pub struct ResponseDateTime {
     pub year: u16,
     pub month: u8,
@@ -324,5 +324,65 @@ impl Display for Price {
         // friendly assert.
         assert!(amount.is_ok());
         write!(f, "{}", amount.unwrap() / 1000)
+    }
+}
+
+impl Display for FightResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let res = self
+            .itineraries
+            .values()
+            .map(|itinerary| {
+                let stops = itinerary
+                    .leg_ids
+                    .iter()
+                    .map(|leg_id| {
+                        let leg = self.legs.get(leg_id);
+                        // friendly assert
+                        assert!(leg.is_some());
+                        let leg = leg.unwrap();
+                        let departure_date_time = format!("{}", leg.departure_date_time);
+                        let arrival_date_time = format!("{}", leg.arrival_date_time);
+                        let carrier_name =
+                            if let Some(carrier_id) = leg.marketing_carrier_ids.first() {
+                                let carrier = self.carriers.get(carrier_id);
+                                // friendly assert
+                                assert!(carrier.is_some());
+                                carrier.unwrap().name.to_string()
+                            } else if let Some(carrier_id) = leg.operating_carrier_ids.first() {
+                                let carrier = self.carriers.get(carrier_id);
+                                // friendly assert
+                                assert!(carrier.is_some());
+                                carrier.unwrap().name.to_string()
+                            } else {
+                                "Unknown carrier name".to_string()
+                            };
+
+                        (departure_date_time, arrival_date_time, carrier_name)
+                    })
+                    .collect::<Vec<_>>();
+                let price = itinerary
+                    .pricing_options
+                    .iter()
+                    .map(|p| format!("{}", p.price))
+                    .collect::<Vec<_>>();
+                (price, stops)
+            })
+            .collect::<Vec<_>>();
+
+        for (prices, stops) in res.iter() {
+            for (departure_date, arrival_date, carrier) in stops.iter() {
+                writeln!(f, "Carrier: {carrier}\t{departure_date} -> {arrival_date}")
+                    .expect("Can't flush data");
+            }
+
+            for p in prices.iter() {
+                writeln!(f, "Price:\t{p}").expect("Can't flush data");
+            }
+
+            writeln!(f).expect("Can't flush data");
+        }
+
+        Ok(())
     }
 }
