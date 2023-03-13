@@ -275,6 +275,9 @@ impl Display for ResponseDateTime {
 
 impl Display for Price {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.unit, self.amount)
+        let amount = self.amount.parse::<usize>();
+        // friendly assert.
+        assert!(amount.is_ok());
+        write!(f, "{}", amount.unwrap() / 1000)
     }
 }
