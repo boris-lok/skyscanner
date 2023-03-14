@@ -69,15 +69,13 @@ impl Services {
 
         let res = self.client.post(url.as_str()).json(q).send().await?;
 
-        Ok(res.text()
-            .await
-            .map(|e| {
-                serde_json::from_str::<FlightsResponse>(e.as_str())
-                    .map_err(|_| {
-                        dbg!(e);
-                    })
-                    .ok()
-            })?)
+        Ok(res.text().await.map(|e| {
+            serde_json::from_str::<FlightsResponse>(e.as_str())
+                .map_err(|_| {
+                    dbg!(e);
+                })
+                .ok()
+        })?)
     }
 
     pub async fn poll_a_request_to_find_flights(
