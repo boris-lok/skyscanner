@@ -135,4 +135,6 @@ async fn main() {
     response.sort();
 
     response.iter().for_each(|f| println!("{}", f));
+
+    std::thread::sleep(std::time::Duration::from_secs(10));
 }

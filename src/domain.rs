@@ -275,6 +275,8 @@ pub struct FormattedResult {
 pub struct Details {
     pub departure_date: ResponseDateTime,
     pub arrival_date: ResponseDateTime,
+    pub stop_count: u16,
+    pub segments: Vec<String>,
     pub carrier_name: String,
 }
 
@@ -405,9 +407,28 @@ impl FightResult {
                             } else {
                                 "Unknown carrier name".to_string()
                             };
+
+                        let segments = leg
+                            .segment_ids
+                            .iter()
+                            .map(|segment_id| match self.segments.get(segment_id) {
+                                None => segment_id.clone(),
+                                Some(segment) => {
+                                    let destination_place = self
+                                        .places
+                                        .get(&segment.destination_place_id)
+                                        .map(|place| place.iata.clone())
+                                        .unwrap_or_else(|| segment.destination_place_id.clone());
+
+                                    format!("...{}", destination_place)
+                                }
+                            })
+                            .collect::<Vec<_>>();
                         Details {
                             departure_date: leg.departure_date_time,
                             arrival_date: leg.arrival_date_time,
+                            stop_count: leg.stop_count,
+                            segments,
                             carrier_name,
                         }
                     })
@@ -456,11 +477,31 @@ impl Ord for FormattedResult {
 impl Display for FormattedResult {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for stop in self.details.iter() {
-            writeln!(
-                f,
-                "Carrier({}):\t{} -> {}",
-                stop.carrier_name, stop.departure_date, stop.arrival_date
-            )
+            if stop.stop_count > 0 {
+                let formatted_stops = stop
+                    .segments
+                    .iter()
+                    .take(stop.stop_count as usize)
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join("");
+
+                writeln!(
+                    f,
+                    "Carrier({}):\t{} -> {}\t(stop count: {})\t({})",
+                    stop.carrier_name,
+                    stop.departure_date,
+                    stop.arrival_date,
+                    stop.stop_count,
+                    formatted_stops,
+                )
+            } else {
+                writeln!(
+                    f,
+                    "Carrier({}):\t{} -> {}",
+                    stop.carrier_name, stop.departure_date, stop.arrival_date,
+                )
+            }
             .expect("Can't flush data");
         }
 
