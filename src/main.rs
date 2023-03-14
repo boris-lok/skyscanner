@@ -1,11 +1,11 @@
-use chrono::{Datelike, Days};
+use chrono::Datelike;
 use clap::value_parser;
 use futures::future::join_all;
 use skyscanner::configuration::get_configuration;
 use skyscanner::datasource::Datasource;
 use skyscanner::domain::{Date, FlightsResponse, Place, Query, QueryLeg};
 use skyscanner::services::Services;
-use skyscanner::utils::{parse_date, parse_input_days};
+use skyscanner::utils::{create_dates, parse_input_days};
 
 #[tokio::main]
 async fn main() {
@@ -23,6 +23,7 @@ async fn main() {
                 .long("duration")
                 .short('d')
                 .value_parser(value_parser!(u64))
+                .value_delimiter(',')
                 .required(true),
         )
         .arg(
@@ -30,6 +31,7 @@ async fn main() {
                 .action(clap::ArgAction::Set)
                 .short('m')
                 .long("months")
+                .value_parser(value_parser!(u16))
                 .value_delimiter(',')
                 .required(true),
         )
@@ -71,15 +73,18 @@ async fn main() {
     let locale = matches.get_one::<String>("locale").expect("Invalid locale");
     let year = matches.get_one::<i32>("year").expect("Invalid year");
     let months = matches
-        .get_many::<String>("months")
+        .get_many::<u16>("months")
         .expect("Invalid months")
+        .copied()
         .collect::<Vec<_>>();
     let days = matches
         .get_one::<Vec<Vec<u16>>>("days")
         .expect("Invalid days");
-    let duration = matches
-        .get_one::<u64>("duration")
-        .expect("Invalid duration");
+    let durations = matches
+        .get_many::<u64>("duration")
+        .expect("Invalid duration")
+        .copied()
+        .collect::<Vec<_>>();
 
     if months.len() != days.len() {
         panic!("Invalid input, months length should equal days length.");
@@ -93,25 +98,7 @@ async fn main() {
     let from = Place::new(Some(from.to_owned()), None);
     let to = Place::new(Some(to.to_owned()), None);
 
-    let dates = months
-        .iter()
-        .zip(days.iter())
-        .filter_map(|(m, d)| {
-            m.parse::<u16>().ok().map(|m| {
-                d.iter()
-                    .map(|dd| parse_date(*year, m, *dd))
-                    .collect::<Vec<_>>()
-            })
-        })
-        .flatten()
-        .filter_map(|from_date| {
-            from_date
-                .checked_add_days(Days::new(*duration))
-                .map(|e| (from_date, e))
-        })
-        .collect::<Vec<_>>();
-
-    dbg!(&dates);
+    let dates = create_dates(*year, months, days, durations);
 
     let mut data_sources = dates
         .into_iter()
@@ -139,5 +126,13 @@ async fn main() {
 
     let res: Vec<anyhow::Result<Option<FlightsResponse>>> = join_all(tasks).await;
 
-    dbg!(res);
+    let mut response = res
+        .into_iter()
+        .flatten()
+        .flatten()
+        .flat_map(|e| e.content.results.format())
+        .collect::<Vec<_>>();
+    response.sort();
+
+    response.iter().for_each(|f| println!("{}", f));
 }
