@@ -12,7 +12,7 @@ pub fn parse_date(year: i32, month: u16, day: u16) -> NaiveDate {
 
 pub fn parse_input_days(s: &str) -> Result<Vec<Vec<u16>>, String> {
     Ok(s.trim()
-        .split(':')
+        .split(';')
         .into_iter()
         .map(|e| {
             e.trim()
