@@ -1,8 +1,9 @@
 use chrono::{Datelike, Days};
 use clap::value_parser;
+use futures::future::join_all;
 use skyscanner::configuration::get_configuration;
 use skyscanner::datasource::Datasource;
-use skyscanner::domain::{Date, Place, Query, QueryLeg};
+use skyscanner::domain::{Date, FlightsResponse, Place, Query, QueryLeg};
 use skyscanner::services::Services;
 use skyscanner::utils::{parse_date, parse_input_days};
 
@@ -112,30 +113,31 @@ async fn main() {
 
     dbg!(&dates);
 
-    let mut result = vec![];
-    for (start, end) in dates.iter() {
-        let q = q.clone();
-        let start = Date::new(start.year(), start.month(), start.day());
-        let leg = QueryLeg::new(from.clone(), to.clone(), start);
-        let q = q.set_query_leg(leg);
-        let end = Date::new(end.year(), end.month(), end.day());
-        let leg = QueryLeg::new(from.clone(), to.clone(), end);
-        let q = q.set_query_leg(leg);
-        let mut datasource = Datasource::new(q, services.clone());
+    let mut data_sources = dates
+        .into_iter()
+        .map(|(s, e)| {
+            (
+                Date::new(s.year(), s.month(), s.day()),
+                Date::new(e.year(), e.month(), e.day()),
+            )
+        })
+        .map(|(s, e)| {
+            let mut q = q.clone();
+            let leg = QueryLeg::new(from.clone(), to.clone(), s);
+            q = q.set_query_leg(leg);
+            let leg = QueryLeg::new(from.clone(), to.clone(), e);
+            q = q.set_query_leg(leg);
+            q
+        })
+        .map(|query| Datasource::new(query, services.clone()))
+        .collect::<Vec<_>>();
 
-        let data = datasource.next().await;
+    let tasks = data_sources
+        .iter_mut()
+        .map(|e| e.next())
+        .collect::<Vec<_>>();
 
-        if let Ok(Some(res)) = data {
-            let formatted_results = res.content.results.format();
-            result.extend(formatted_results);
-        } else {
-            println!("{:?}", data);
-        }
+    let res: Vec<anyhow::Result<Option<FlightsResponse>>> = join_all(tasks).await;
 
-        std::thread::sleep(std::time::Duration::from_secs(5));
-    }
-
-    result.sort();
-
-    result.iter().for_each(|r| println!("{}", r));
+    dbg!(res);
 }
