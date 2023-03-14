@@ -9,7 +9,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.69"
-chrono = { version = "0.4.24", features = ["serde"] }
+chrono = { version = "0.4.24", features = ["serde"], default-features = false }
 clap = { version = "4.1.8", features = ["derive"] }
 config = "0.13.3"
 futures = "0.3.27"
