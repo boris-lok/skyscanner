@@ -112,21 +112,27 @@ async fn main() {
             let mut q = q.clone();
             let leg = QueryLeg::new(from.clone(), to.clone(), s);
             q = q.set_query_leg(leg);
-            let leg = QueryLeg::new(from.clone(), to.clone(), e);
+            let leg = QueryLeg::new(to.clone(), from.clone(), e);
             q = q.set_query_leg(leg);
             q
         })
         .map(|query| Datasource::new(query, services.clone()))
         .collect::<Vec<_>>();
 
-    let tasks = data_sources
-        .iter_mut()
-        .map(|e| e.next())
-        .collect::<Vec<_>>();
+    let mut result = vec![];
 
-    let res: Vec<anyhow::Result<Option<FlightsResponse>>> = join_all(tasks).await;
+    for _ in 0..2 {
+        let tasks = data_sources
+            .iter_mut()
+            .map(|e| e.next())
+            .collect::<Vec<_>>();
 
-    let mut response = res
+        let res: Vec<anyhow::Result<Option<FlightsResponse>>> = join_all(tasks).await;
+        result.extend(res);
+        std::thread::sleep(std::time::Duration::from_secs(10));
+    }
+
+    let mut response = result
         .into_iter()
         .flatten()
         .flatten()
@@ -134,7 +140,5 @@ async fn main() {
         .collect::<Vec<_>>();
     response.sort();
 
-    response.iter().for_each(|f| println!("{}", f));
-
-    std::thread::sleep(std::time::Duration::from_secs(10));
+    response.iter().rev().for_each(|f| println!("{}", f));
 }
