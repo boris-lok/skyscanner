@@ -1,6 +1,5 @@
 use crate::domain::{CreateFlightsRequest, FlightsResponse, Query, ResponseStatus};
 use crate::services::Services;
-use reqwest::Error;
 
 pub struct Datasource {
     session_token: Option<String>,

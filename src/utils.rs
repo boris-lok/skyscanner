@@ -4,10 +4,24 @@ pub fn check_date_is_weekend(date: chrono::DateTime<chrono::Local>) -> bool {
     matches!(date.weekday(), Weekday::Sat | Weekday::Sun)
 }
 
-pub fn parse_date(year: u16, month: u8, day: u8) -> NaiveDate {
+pub fn parse_date(year: i32, month: u16, day: u16) -> NaiveDate {
     let formatted_date = format!("{year}-{month}-{day}");
     NaiveDate::parse_from_str(formatted_date.as_str(), "%Y-%m-%d")
-        .expect(format!("Failed to parse date {formatted_date}").as_str())
+        .unwrap_or_else(|_| panic!("Failed to parse date {formatted_date}"))
+}
+
+pub fn parse_input_days(s: &str) -> Result<Vec<Vec<u16>>, String> {
+    Ok(s.trim()
+        .split(':')
+        .into_iter()
+        .map(|e| {
+            e.trim()
+                .split(',')
+                .into_iter()
+                .filter_map(|ee| ee.parse::<u16>().ok())
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>())
 }
 
 #[cfg(test)]

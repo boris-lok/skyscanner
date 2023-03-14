@@ -1,39 +1,6 @@
-use clap::Parser;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-pub struct Cli {
-    /// From which airport, e.g. TPE
-    #[arg(long, value_name = "FROM PLACE")]
-    pub from: String,
-    /// to which airport, e.g. HKG
-    #[arg(long, value_name = "TO PLACE")]
-    pub to: String,
-    /// locale e.g. zh-TW
-    #[arg(long, value_name = "LOCALE")]
-    pub locale: String,
-    /// market e.g. TW
-    #[arg(long, value_name = "MARKET")]
-    pub market: String,
-    /// currency e.g. TWD
-    #[arg(long, value_name = "CURRENCY")]
-    pub currency: String,
-    /// year e.g. 2023
-    #[arg(long, value_name = "YEAR")]
-    pub year: u16,
-    /// months e.g. 4 5
-    #[arg(long, value_name = "MONTH", value_delimiter = ',')]
-    pub months: Vec<u8>,
-    /// days e.g. 1
-    #[arg(long, value_name = "DAYS", value_delimiter = ',')]
-    pub days: Vec<u8>,
-    /// durations e.g. 3
-    #[arg(long, value_name = "DURATION")]
-    pub duration: u8,
-}
 
 #[derive(serde::Serialize)]
 pub struct CreateFlightsRequest {
@@ -72,9 +39,9 @@ pub struct Place {
 
 #[derive(serde::Serialize, Clone)]
 pub struct Date {
-    year: u16,
-    month: u8,
-    day: u8,
+    year: i32,
+    month: u32,
+    day: u32,
 }
 
 #[derive(serde::Serialize, Clone)]
@@ -364,7 +331,7 @@ impl Query {
 }
 
 impl Date {
-    pub fn new(year: u16, month: u8, day: u8) -> Self {
+    pub fn new(year: i32, month: u32, day: u32) -> Self {
         Self { year, month, day }
     }
 }
